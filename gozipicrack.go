@@ -1,6 +1,5 @@
 /*
-BUG:
-Parar cuando encuentre el pass.
+Add concurrency.
 */
 package main
 
@@ -46,7 +45,6 @@ func main() {
 		fmt.Println("Zip file doesnt exist.")
 		return
 	}
-	// Replace with your dictionary.
 	lines, err := readLines(df)
 	if err != nil {
 		fmt.Println("Dictionary doesnt exist.")
