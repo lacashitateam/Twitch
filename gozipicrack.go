@@ -1,5 +1,6 @@
 /*
-Add concurrency.
+BUG:
+Parar cuando encuentre el pass.
 */
 package main
 
@@ -10,6 +11,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/yeka/zip"
 )
@@ -45,18 +47,20 @@ func main() {
 		fmt.Println("Zip file doesnt exist.")
 		return
 	}
+	defer r.Close() // <-- Con defer le decimos que si termina main, que cierre el archivo zip
+	// Replace with your dictionary.
 	lines, err := readLines(df)
 	if err != nil {
 		fmt.Println("Dictionary doesnt exist.")
 		return
 	}
-	//wg := &sync.WaitGroup{}
+	wg := &sync.WaitGroup{}
 	c := 0
 	for _, line := range lines {
-		//wg.Add(1)
 		if c != 1 {
+			wg.Add(1) // <-- Sólo añades el hilo si c != 1, si no, creas hilos que nunca acaban
 			func(line string) {
-				//defer wg.Done()
+				defer wg.Done()
 				for _, f := range r.File {
 					if f.IsEncrypted() {
 						f.SetPassword(line)
@@ -66,18 +70,15 @@ func main() {
 						log.Fatal(err)
 					}
 					buf, err := ioutil.ReadAll(p)
-					if err != nil {
-						break
-					} else {
+					if err == nil { // <-- El break realmente no hace falta, dado que no tiene ningún código dentro
 						fmt.Printf("Password found: %v", line)
+						fmt.Printf("\nSize of %v: %v byte(s)\n", f.Name, len(buf))
 						c = 1
 					}
-					defer p.Close()
-					fmt.Printf("\nSize of %v: %v byte(s)\n", f.Name, len(buf))
-
+					p.Close()
 				}
 			}(line)
 		}
 	}
-	//wg.Wait()
+	wg.Wait()
 }
